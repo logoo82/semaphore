@@ -7,6 +7,8 @@
 //POSIX 세마포 구조체
 //모든 쓰레드에 의해 공유
 sem_t toiletsem;
+//성별별 게이트
+sem_t man_gate, woman_gate;
 
 void* guest(void* arg)
 {
@@ -30,6 +32,8 @@ void* guest(void* arg)
 #define NO 0
 //동시에 들어갈 수있는 쓰레드 개수
 #define MAX_COUNTER 3
+//쓰레드의 개수
+#define NUM_THREAD 15
 
 int main()
 {
@@ -43,8 +47,8 @@ int main()
 
 
     //남자 쓰레드와 여자 쓰레드 구조체를 각각 생성
-    pthread_t man[15];
-    pthread_t woman[15];
+    pthread_t man[NUM_THREAD];
+    pthread_t woman[NUM_THREAD];
 
     //세마포 초기화(초기걊 설정)
     //MAX_COUNTER 명이 동시에 사용
@@ -56,27 +60,32 @@ int main()
         return 0;
     }
 
+    sem_init(&man_gate, NO, 0);
+    sem_init(&woman_gate, NO, 0);
+
     //세마포의 현재 counter 값 읽기
     sem_getvalue(&toiletsem, &counter);
 
-    for(int i = 0; i < 15; i++)
+    for(int i = 0; i < NUM_THREAD; i++)
     //15명의 남자고객 생성
         pthread_create(&man[i], NULL, guest, (void*)man_name[i]);
-    for(int i = 0; i < 15; i++)
+    for(int i = 0; i < NUM_THREAD; i++)
     //15명의 여자고객 생성
         pthread_create(&woman[i], NULL, guest, (void*)woman_name[i]);
     
     //모든 남자 고객이 소멸할 때 까지 대기    
-    for(int i = 0; i < 15; i++)
+    for(int i = 0; i < NUM_THREAD; i++)
         pthread_join(man[i], NULL);
     //모든 여자 고객이 소멸할 때 까지 대기    
-    for(int i = 0; i < 15; i++)
+    for(int i = 0; i < NUM_THREAD; i++)
         pthread_join(woman[i], NULL);    
     
     //세마포의 현재 counter값 읽기
     sem_getvalue(&toiletsem, &counter);
     printf("세마포 counter = %d\n", counter);
     sem_destroy(&toiletsem);
+    sem_destroy(&man_gate);
+    sem_destroy(&woman_gate);
 
     return 0;
 }
